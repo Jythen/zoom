@@ -36,7 +36,7 @@ STR_ACTION_ZOOM = "zoom"
 
 
 class OOM(): # Like ZOOM, but on ONE grid
-    def __init__(self, mu_star : float, mininterval : float = 0., maxinterval : float = 1., T : int = 1000, K : int=8,  **kwargs): 
+    def __init__(self, mu_star : float, mininterval : float = 0., maxinterval : float = 1., T : int = 1000, K : int=8, coef_CI : float = 1.5,  **kwargs): 
         """ 
         Class that implement the Find_Best_Interval and Choose_Interval_Extremity for a single grid.
         ZOOM is then build as a tree of grids.
@@ -66,6 +66,8 @@ class OOM(): # Like ZOOM, but on ONE grid
 
         self.last_sampled_point = self.K//2 #begins at the middle of the grid
         self.reverse_converter =  self._create_converter()  # functon to map the grid index k to its input value s_d,n,k
+
+        self.coef_CI = coef_CI
         
         
            
@@ -106,7 +108,7 @@ class OOM(): # Like ZOOM, but on ONE grid
             b= np.infty
             kl_error = np.infty
         else :
-            b = np.sqrt(np.log(self.T)/total_obs)
+            b = np.sqrt(self.coef_CI*np.log(self.T)/total_obs)
             kl_error = np.log(self.T/(total_obs))/total_obs
 
         if estimator+b < self.mu_star :
@@ -241,7 +243,8 @@ class OOM(): # Like ZOOM, but on ONE grid
                 mininterval=new_min,
                 maxinterval=new_max,
                 T= self.T,
-                K=self.K
+                K=self.K,
+                coef_CI=self.coef_CI
             )
 
                 
@@ -304,22 +307,24 @@ class ZOOM():
     mininterval : the minimun input value of the current grid. (float)
     maxinterval : the maximum input value of the current grid. (float)
     T : The total sampling budget
-    K : The coarseness of the grid
+    K : The coarseness of the grid. By default (K=0) uses the optimal value as a function of T (see equation 4 in the paper)
 
     """
-    def __init__(self, mu_star : float, mininterval  : float = 0, maxinterval: float = 1, T : int = 1000, K : int=32, **kwargs): 
-        """
-        As DOS is completely model free, there are only 2 arguments
-        mu*(the target proba), and T, the time horizon
-        """
+    def __init__(self, mu_star : float, mininterval  : float = 0, maxinterval: float = 1, T : int = 1000, K : int=0, **kwargs): 
+
 
         
 
         self.T=T
         self.mu_star =  mu_star
-        self.K = K
-        
 
+        if K == 0 : #set automatically to sqrt T
+            K = int(np.sqrt(T/(np.log(T)*np.log(np.log(T))) ))
+
+        if K %2 == 1 :
+            K = K-1
+
+        self.K = K
         self.mininterval = mininterval
         self.maxinterval = maxinterval
 
@@ -336,9 +341,7 @@ class ZOOM():
 
         self.last_path = []  # store where the OOM used to sample was to propagate the update
         self.pull_optimistic = False  # store which rule should be used 
-        self.N_star = T/(np.log(T)*np.log(np.log(T)))
-
-        
+                
         
 
 
@@ -424,19 +427,12 @@ class ZOOM():
         
         action = None
         index = None
-        promising_arm = None
-        promising_arm_pull = 0
         
 
         while True:
             oom : OOM = dict["OOM"]
 
             value, npulls = oom.get_most_pulled_arm()
-            if npulls > self.N_star :
-               if npulls > promising_arm_pull:
-                promising_arm_pull = npulls
-                promising_arm = value
-            
             action, index = oom.what_to_do(optimistic=True)
             if action == STR_ACTION_SAMPLE :
                 break
@@ -445,10 +441,8 @@ class ZOOM():
             else :
                 dict = dict[index]
         
-        if not( promising_arm is None ):
-            return promising_arm
-        else :
-            value, npulls = oom.get_most_pulled_arm()
-            return value
+        
+        value, npulls = oom.get_most_pulled_arm()
+        return value
 
 

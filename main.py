@@ -20,12 +20,12 @@ from xp_wrapper import XP_Wrapper
                     
 
  # xp params
-
-mu_star = 0.2
+function_type="LINEAR"
+mu_star = 0.25
 repeats = 20
-T = 50
-alpha = 0.5
-delta = 0.1
+T = 500
+alpha = 1
+
 
 
 if __name__ == "__main__":
@@ -34,11 +34,11 @@ if __name__ == "__main__":
  
 
 
-    print("using alpha = {}, delta = {}, mu_star = {}".format(alpha,delta,mu_star))
+    print("using type ={}, alpha = {},  mu_star = {}".format(function_type, alpha, mu_star))
     
 
     
-    psi = ResponseF(delta=delta,alpha=alpha,mu_star=mu_star)      
+    psi = ResponseF(type=function_type, alpha=alpha,mu_star=mu_star)      
     psi.reset_s_star()
 
     xpwrap = XP_Wrapper(response_function=psi, optimization_method=ZOOM, \
