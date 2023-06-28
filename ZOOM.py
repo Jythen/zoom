@@ -215,7 +215,11 @@ class OOM(): # Like ZOOM, but on ONE grid
                     action, index = STR_ACTION_SAMPLE, high_idx
                 else :
                     action = STR_ACTION_SAMPLE
-                    index = np.random.choice([low_idx,high_idx])
+                    if t0<t1 :
+                        index = low_idx
+                    else :
+                        index = high_idx
+                    #index = np.random.choice([low_idx,high_idx])
         if action == STR_ACTION_SAMPLE:
             self.last_sampled_point = index
         return action, index
@@ -323,6 +327,9 @@ class ZOOM():
 
         if K %2 == 1 :
             K = K-1
+
+        if K<4 :  # v1.1 : 4 is a minimum value to avoid some edge case
+            K = 4
 
         self.K = K
         self.mininterval = mininterval
