@@ -6,3 +6,6 @@ https://hal.archives-ouvertes.fr/hal-03818003
 Please cite this paper if you use this algorithm for your research!
 
 For questions regarding this work, please contact  julien.Audiffren@unifr.ch
+
+
+Credits for the C# / Java version of the algorithm go to Jean-Luc Bloechle
